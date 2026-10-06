@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opening in Skybound...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #0f172a;
+      color: #f8fafc;
+      text-align: center;
+    }
+    .btn {
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #2563eb;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      display: inline-block;
+    }
+    .btn:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <h2 id="status">Redirecting to Skybound...</h2>
+  <p id="details">Looking up add-on details...</p>
+  <a id="fallback-btn" class="btn" style="display: none;">Open Skybound Manually</a>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const sim = params.get('sim');
+    const addon = params.get('addon');
+
+    if (sim && addon) {
+      const customUrl = `skybound://addon/${encodeURIComponent(sim)}/${encodeURIComponent(addon)}`;
+      
+      document.getElementById('details').textContent = `Add-on: ${addon} (${sim})`;
+      const btn = document.getElementById('fallback-btn');
+      btn.href = customUrl;
+      btn.style.display = 'inline-block';
+
+      // Trigger redirect immediately
+      window.location.href = customUrl;
+    } else {
+      document.getElementById('status').textContent = 'Invalid Link';
+      document.getElementById('details').textContent = 'Missing simulator or addon parameter.';
+    }
+  </script>
+</body>
+</html>
