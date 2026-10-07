@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Skybound</title>
+  <style>
+    :root {
+      --pale: #cee5f2;
+      --pale-2: #accbe1;
+      --steel: #7c98b3;
+      --slate: #536b78;
+      --danger: #c05555;
+      --bg: #ffffff;
+      --text: #536b78;
+      --heading: #536b78;
+      --grid: rgba(124, 152, 179, .07);
+      --halo: 124, 152, 179;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a232b;
+        --text: #cee5f2;
+        --heading: #cee5f2;
+        --grid: rgba(124, 152, 179, .05);
+        --halo: 172, 203, 225;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--text);
+      font-family: "Inter Variable", Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    [hidden] { display: none !important; }
+
+    .topbar {
+      height: 62px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      background: var(--bg);
+      border-bottom: 4px solid var(--slate);
+    }
+
+    .brand {
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.07em;
+      text-transform: uppercase;
+      color: var(--heading);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px 56px;
+    }
+
+    .card {
+      position: relative;
+      isolation: isolate;
+      width: min(100%, 520px);
+      background: var(--bg);
+      border: 4px solid var(--slate);
+      box-shadow: 16px 16px 0 0 var(--slate);
+      transition: box-shadow .15s;
+    }
+
+    .card:hover { box-shadow: 12px 12px 0 0 var(--slate); }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: var(--ha, 0);
+      transition: opacity .25s ease;
+      background: radial-gradient(circle 160px at var(--hx, -999px) var(--hy, -999px),
+        rgba(var(--halo), .035), rgba(var(--halo), 0));
+    }
+
+    .card > * { position: relative; z-index: 1; }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+      border-bottom: 4px solid var(--slate);
+    }
+
+    .tag {
+      padding: 6px 10px;
+      background: var(--slate);
+      color: var(--pale);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .indicator {
+      width: 14px;
+      height: 14px;
+      flex: none;
+      background: var(--steel);
+    }
+
+    .card.busy .indicator { animation: blink 1s steps(2, jump-none) infinite; }
+    .card.error .indicator { background: var(--danger); }
+
+    @keyframes blink { 50% { opacity: .25; } }
+
+    .card-body { padding: 32px 28px 28px; }
+
+    h1 {
+      margin: 0 0 24px;
+      font-size: clamp(38px, 9vw, 56px);
+      font-weight: 900;
+      line-height: .92;
+      letter-spacing: -.07em;
+      text-transform: uppercase;
+      color: var(--heading);
+    }
+
+    .card.error h1 { color: var(--danger); }
+
+    .lead {
+      margin: 0 0 28px;
+      padding: 6px 0 6px 18px;
+      border-left: 4px solid var(--steel);
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: -.02em;
+      overflow-wrap: anywhere;
+    }
+
+    .card.error .lead { border-left-color: var(--danger); }
+
+    .facts {
+      margin: 0 0 28px;
+      border: 2px solid var(--slate);
+    }
+
+    .fact {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 11px 14px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .fact + .fact { border-top: 2px solid var(--slate); }
+    .fact dt { flex: none; color: var(--steel); }
+    .fact dd { margin: 0; text-align: right; color: var(--heading); overflow-wrap: anywhere; }
+
+    .progress {
+      height: 4px;
+      margin: 0 0 28px;
+      overflow: hidden;
+      background: rgba(83, 107, 120, .2);
+    }
+
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      background: var(--slate);
+      animation: sweep 1.4s cubic-bezier(.18, .92, .34, 1) infinite;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .progress::after { background: var(--steel); }
+    }
+
+    @keyframes sweep {
+      0%   { transform: scaleX(0); transform-origin: left; }
+      55%  { transform: scaleX(1); transform-origin: left; }
+      56%  { transform: scaleX(1); transform-origin: right; }
+      100% { transform: scaleX(0); transform-origin: right; }
+    }
+
+    .card.error .progress { display: none; }
+
+    .button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 15px 22px;
+      border: 4px solid var(--slate);
+      background: var(--slate);
+      color: var(--pale);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background .13s, border-color .13s, transform .13s;
+    }
+
+    .button span:last-child { font-size: 24px; transition: transform .15s; }
+
+    .button:hover:not(:disabled) {
+      background: var(--steel);
+      border-color: var(--steel);
+      transform: translateY(-1px);
+    }
+
+    .button:hover:not(:disabled) span:last-child { transform: translateX(7px); }
+    .button:active:not(:disabled) { transform: none; }
+    .button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .button:focus-visible,
+    .link:focus-visible {
+      outline: 4px solid var(--steel);
+      outline-offset: 4px;
+    }
+
+    .note {
+      margin: 18px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.5;
+      opacity: .85;
+    }
+
+    .link {
+      display: inline-block;
+      margin-top: 18px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: var(--heading);
+      text-decoration: none;
+    }
+
+    .link:hover { color: var(--steel); }
+
+    .field-group { margin: 0 0 20px; }
+
+    .field-label {
+      display: block;
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--steel);
+    }
+
+    .field {
+      width: 100%;
+      height: 48px;
+      padding: 0 12px;
+      border: 4px solid var(--slate);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      outline: none;
+      transition: border-color .13s;
+    }
+
+    .field::placeholder { color: var(--steel); font-weight: 700; opacity: .6; }
+    .field:focus { border-color: var(--steel); }
+    .field[aria-invalid="true"] { border-color: var(--danger); }
+    .field[readonly] { background: rgba(124, 152, 179, .08); }
+
+    .field-message {
+      min-height: 20px;
+      margin: 8px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--steel);
+    }
+
+    .field-message.invalid { color: var(--danger); }
+
+    @media (max-width: 480px) {
+      .topbar { padding: 0 16px; }
+      main { padding: 28px 16px 40px; }
+      .card { box-shadow: 8px 8px 0 0 var(--slate); }
+      .card:hover { box-shadow: 6px 6px 0 0 var(--slate); }
+      .card-body { padding: 24px 20px 22px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">Skybound</span>
+  </header>
+
+  <main>
+    <section class="card busy" id="card" aria-live="polite">
+      <div class="card-head">
+        <span class="tag" id="tag">Add-on link</span>
+        <span class="indicator" aria-hidden="true"></span>
+      </div>
+
+      <div class="card-body" id="redirect-view" hidden>
+        <h1 id="title">Redirecting to Skybound...</h1>
+        <p class="lead" id="lead">Looking up add-on details...</p>
+
+        <dl class="facts" id="facts" hidden>
+          <div class="fact"><dt>Add-on</dt><dd id="fact-addon"></dd></div>
+          <div class="fact"><dt>Simulator</dt><dd id="fact-sim"></dd></div>
+        </dl>
+
+        <div class="progress" id="progress" aria-hidden="true"></div>
+
+        <a class="button" id="open-button" href="#" hidden>
+          <span>Open Skybound Manually</span><span aria-hidden="true">→</span>
+        </a>
+        <p class="note" id="note" hidden>Nothing happened? Make sure Skybound Hangar is installed, then use the button above.</p>
+        <a class="link" id="converter-link" href="#" hidden>Open link converter</a>
+      </div>
+
+      <div class="card-body" id="converter-view" hidden>
+        <h1>Convert add-on link</h1>
+        <p class="lead">Paste a skybound:// link to get a web link anyone can click.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="source">Skybound link</label>
+          <input class="field" id="source" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
+                 placeholder="skybound://addon/msfs-2024/cows-da40">
+          <p class="field-message" id="message"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="result">Web link</label>
+          <input class="field" id="result" type="text" readonly placeholder="Your web link shows up here">
+        </div>
+
+        <button class="button" id="copy-button" type="button" disabled>
+          <span id="copy-label">Copy web link</span><span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const card = $('card');
+    const query = new URLSearchParams(window.location.search);
+    const sim = query.get('sim');
+    const addon = query.get('addon');
+    const pageUrl = window.location.href.split(/[?#]/)[0];
+    const LINK_PATTERN = /^skybound:\/\/addon\/([^/?#\s]+)\/([^/?#\s]+)\/?$/i;
+
+    function setState(state) {
+      card.classList.remove('busy', 'error');
+      if (state) card.classList.add(state);
+    }
+
+    function showRedirect() {
+      const target = `skybound://addon/${encodeURIComponent(sim)}/${encodeURIComponent(addon)}`;
+
+      $('redirect-view').hidden = false;
+      $('lead').textContent = `Add-on: ${addon} (${sim})`;
+      $('fact-addon').textContent = addon;
+      $('fact-sim').textContent = sim;
+      $('facts').hidden = false;
+      $('note').hidden = false;
+      $('open-button').href = target;
+      $('open-button').hidden = false;
+
+      window.location.href = target;
+    }
+
+    function showInvalid() {
+      setState('error');
+      document.title = 'Invalid Link';
+
+      $('redirect-view').hidden = false;
+      $('title').textContent = 'Invalid Link';
+      $('lead').textContent = 'Missing simulator or addon parameter.';
+      $('converter-link').href = pageUrl;
+      $('converter-link').hidden = false;
+    }
+
+    function showConverter() {
+      const source = $('source');
+      const result = $('result');
+      const message = $('message');
+      const copyButton = $('copy-button');
+      const copyLabel = $('copy-label');
+      let resetTimer;
+
+      setState(null);
+      document.title = 'Skybound Link Converter';
+      $('tag').textContent = 'Link converter';
+      $('converter-view').hidden = false;
+
+      function parse(value) {
+        const match = value.match(LINK_PATTERN);
+        if (!match) return null;
+        try {
+          return { sim: decodeURIComponent(match[1]), addon: decodeURIComponent(match[2]) };
+        } catch {
+          return null;
+        }
+      }
+
+      function update() {
+        const value = source.value.trim();
+        const parsed = value ? parse(value) : null;
+        const invalid = Boolean(value) && !parsed;
+
+        source.setAttribute('aria-invalid', String(invalid));
+        message.classList.toggle('invalid', invalid);
+        copyButton.disabled = !parsed;
+
+        if (parsed) {
+          result.value = `${pageUrl}?sim=${encodeURIComponent(parsed.sim)}&addon=${encodeURIComponent(parsed.addon)}`;
+          message.textContent = `${parsed.addon} for ${parsed.sim}`;
+        } else {
+          result.value = '';
+          message.textContent = invalid ? 'Use the format skybound://addon/simulator/addon-name' : '';
+        }
+      }
+
+      async function copy() {
+        try {
+          await navigator.clipboard.writeText(result.value);
+        } catch {
+          result.select();
+          document.execCommand('copy');
+        }
+        copyLabel.textContent = 'Copied';
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => { copyLabel.textContent = 'Copy web link'; }, 1600);
+      }
+
+      source.addEventListener('input', update);
+      result.addEventListener('focus', () => result.select());
+      copyButton.addEventListener('click', copy);
+      source.focus();
+    }
+
+    card.addEventListener('pointermove', (event) => {
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--hx', `${event.clientX - rect.left}px`);
+      card.style.setProperty('--hy', `${event.clientY - rect.top}px`);
+      card.style.setProperty('--ha', '1');
+    });
+
+    card.addEventListener('pointerleave', () => card.style.setProperty('--ha', '0'));
+
+    if (sim && addon) showRedirect();
+    else if (query.has('sim') || query.has('addon')) showInvalid();
+    else showConverter();
+  </script>
+</body>
+</html>
