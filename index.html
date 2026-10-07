@@ -23,7 +23,6 @@
       :root {
         --bg: #1a232b;
         --text: #cee5f2;
-        --heading: #cee5f2;
         --grid: rgba(124, 152, 179, .05);
         --halo: 172, 203, 225;
       }
@@ -34,6 +33,7 @@
     html, body { margin: 0; }
 
     body {
+      isolation: isolate;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -46,6 +46,19 @@
       font-family: "Inter Variable", Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      background-size: 2400px 2400px;
+      opacity: .03;
+    }
+
+    .topbar, main { position: relative; z-index: 1; }
 
     [hidden] { display: none !important; }
 
@@ -178,7 +191,7 @@
 
     .fact + .fact { border-top: 2px solid var(--slate); }
     .fact dt { flex: none; color: var(--steel); }
-    .fact dd { margin: 0; text-align: right; color: var(--heading); overflow-wrap: anywhere; }
+    .fact dd { margin: 0; text-align: right; color: var(--text); overflow-wrap: anywhere; }
 
     .progress {
       height: 4px;
