@@ -279,7 +279,6 @@
     }
 
     .link:hover { color: var(--steel); }
-    .link + .link { margin-left: 22px; }
 
     .field-group { margin: 0 0 20px; }
 
@@ -354,7 +353,7 @@
         <dl class="facts" id="facts" hidden>
           <div class="fact"><dt>Add-on</dt><dd id="fact-addon"></dd></div>
           <div class="fact"><dt>Simulator</dt><dd id="fact-sim"></dd></div>
-          <div class="fact" id="fact-source-row" hidden><dt>Source</dt><dd>Custom source</dd></div>
+          <div class="fact" id="fact-source-row" hidden><dt>Source</dt><dd id="fact-source"></dd></div>
         </dl>
 
         <div class="progress" id="progress" aria-hidden="true"></div>
@@ -362,8 +361,7 @@
         <a class="button" id="open-button" href="#" hidden>
           <span>Open Skybound Manually</span><span aria-hidden="true">→</span>
         </a>
-        <p class="note" id="note" hidden>Nothing happened? Make sure Skybound Hangar is installed, then use the button above. Not installed yet? Download it below.</p>
-        <a class="link" id="download-link" href="#" hidden>Download Skybound Hangar</a>
+        <p class="note" id="note" hidden>Nothing happened? Make sure Skybound Hangar is installed, then use the button above.</p>
         <a class="link" id="converter-link" href="#" hidden>Open link converter</a>
       </div>
 
@@ -397,107 +395,34 @@
     const query = new URLSearchParams(window.location.search);
     const sim = query.get('sim');
     const addon = query.get('addon');
-    const sourceParam = query.get('source');
+    const sourceParam = query.get('source');   // optional catalog source URL
     const pageUrl = window.location.href.split(/[?#]/)[0];
-    const LINK_PATTERN = /^skybound:\/\/addon\/([^/?#\s]+)\/([^/?#\s]+)\/?(?:\?([^#\s]*))?$/i;
-
-    // Where people without Skybound Hangar are sent.
-    const DOWNLOAD_URL = 'https://github.com/openflightlabs/SkyBound-Hangar/releases/latest';
-    // If the page keeps focus this long after launching, no app picked the link up.
-    const NOT_INSTALLED_AFTER_MS = 2500;
-    // If the page stays unfocused this long (the app took over), try to close the tab.
-    const CLOSE_AFTER_MS = 3000;
-
-    // Only https sources are allowed. Returns the cleaned URL, '' when absent, or null when invalid.
-    function cleanSource(value) {
-      if (value === null || value === '') return '';
-      try {
-        const url = new URL(value.trim());
-        if (url.protocol !== 'https:' || url.username || url.password) return null;
-        return url.href;
-      } catch {
-        return null;
-      }
-    }
+    // Accept an optional ?source=… query parameter on the skybound:// deep link.
+    const LINK_PATTERN = /^skybound:\/\/addon\/([^/?#\s]+)\/([^/?#\s]+)\/?(\?[^#\s]*)?$/i;
 
     function setState(state) {
       card.classList.remove('busy', 'error');
       if (state) card.classList.add(state);
     }
 
-    function buildTarget(simValue, addonValue, source) {
-      let target = `skybound://addon/${encodeURIComponent(simValue)}/${encodeURIComponent(addonValue)}`;
-      if (source) target += `?source=${encodeURIComponent(source)}`;
-      return target;
-    }
-
-    function showRedirect(source) {
-      const target = buildTarget(sim, addon, source);
-      let launched = false;
-      let sawHandoff = false;
-      let notInstalledTimer;
-      let closeTimer;
+    function showRedirect() {
+      // Preserve source in the deep link so Skybound can auto-add the catalog.
+      const sourceQuery = sourceParam ? `?source=${encodeURIComponent(sourceParam)}` : '';
+      const target = `skybound://addon/${encodeURIComponent(sim)}/${encodeURIComponent(addon)}${sourceQuery}`;
 
       $('redirect-view').hidden = false;
       $('lead').textContent = `Add-on: ${addon} (${sim})`;
       $('fact-addon').textContent = addon;
       $('fact-sim').textContent = sim;
-      $('fact-source-row').hidden = !source;
+      if (sourceParam) {
+        $('fact-source').textContent = sourceParam;
+        $('fact-source-row').hidden = false;
+      }
       $('facts').hidden = false;
       $('note').hidden = false;
       $('open-button').href = target;
       $('open-button').hidden = false;
-      $('download-link').href = DOWNLOAD_URL;
-      $('download-link').hidden = false;
 
-      function finish(title, lead) {
-        setState(null);
-        $('title').textContent = title;
-        $('lead').textContent = lead;
-        $('progress').hidden = true;
-      }
-
-      function onHandoff() {
-        // The page lost focus or was hidden: the browser prompt or Skybound Hangar took over.
-        if (!launched) return;
-        sawHandoff = true;
-        clearTimeout(notInstalledTimer);
-        clearTimeout(closeTimer);
-        closeTimer = setTimeout(() => {
-          finish('Opened in Hangar', 'You can close this tab.');
-          $('note').hidden = true;
-          window.close(); // Browsers only allow this for tabs a script opened, so the message above is the fallback.
-        }, CLOSE_AFTER_MS);
-      }
-
-      function onReturn() {
-        // Back on the page quickly (prompt dismissed or cancelled): don't close, keep the manual options.
-        if (!sawHandoff || document.hidden) return;
-        clearTimeout(closeTimer);
-      }
-
-      window.addEventListener('blur', onHandoff);
-      window.addEventListener('pagehide', onHandoff);
-      document.addEventListener('visibilitychange', () => { if (document.hidden) onHandoff(); else onReturn(); });
-      window.addEventListener('focus', onReturn);
-
-      // A manual click counts as a fresh attempt, so give it the same detection.
-      $('open-button').addEventListener('click', () => {
-        launched = true;
-        sawHandoff = false;
-        clearTimeout(closeTimer);
-        clearTimeout(notInstalledTimer);
-        notInstalledTimer = setTimeout(sendToDownload, NOT_INSTALLED_AFTER_MS);
-      });
-
-      function sendToDownload() {
-        if (sawHandoff) return;
-        finish('Hangar not found', 'Skybound Hangar doesn\u2019t seem to be installed. Taking you to the download...');
-        window.location.href = DOWNLOAD_URL;
-      }
-
-      launched = true;
-      notInstalledTimer = setTimeout(sendToDownload, NOT_INSTALLED_AFTER_MS);
       window.location.href = target;
     }
 
@@ -507,13 +432,13 @@
 
       $('redirect-view').hidden = false;
       $('title').textContent = 'Invalid Link';
-      $('lead').textContent = (sim && addon) ? 'The source parameter must be a valid https link.' : 'Missing simulator or addon parameter.';
+      $('lead').textContent = 'Missing simulator or addon parameter.';
       $('converter-link').href = pageUrl;
       $('converter-link').hidden = false;
     }
 
     function showConverter() {
-      const source = $('source');
+      const sourceInput = $('source');
       const result = $('result');
       const message = $('message');
       const copyButton = $('copy-button');
@@ -529,30 +454,34 @@
         const match = value.match(LINK_PATTERN);
         if (!match) return null;
         try {
-          const source = cleanSource(new URLSearchParams(match[3] || '').get('source'));
-          if (source === null) return null;
-          return { sim: decodeURIComponent(match[1]), addon: decodeURIComponent(match[2]), source };
+          const parsed = { sim: decodeURIComponent(match[1]), addon: decodeURIComponent(match[2]), source: null };
+          if (match[3]) {
+            const qs = new URLSearchParams(match[3].slice(1));
+            parsed.source = qs.get('source') || null;
+          }
+          return parsed;
         } catch {
           return null;
         }
       }
 
       function update() {
-        const value = source.value.trim();
+        const value = sourceInput.value.trim();
         const parsed = value ? parse(value) : null;
         const invalid = Boolean(value) && !parsed;
 
-        source.setAttribute('aria-invalid', String(invalid));
+        sourceInput.setAttribute('aria-invalid', String(invalid));
         message.classList.toggle('invalid', invalid);
         copyButton.disabled = !parsed;
 
         if (parsed) {
-          result.value = `${pageUrl}?sim=${encodeURIComponent(parsed.sim)}&addon=${encodeURIComponent(parsed.addon)}`
-            + (parsed.source ? `&source=${encodeURIComponent(parsed.source)}` : '');
-          message.textContent = `${parsed.addon} for ${parsed.sim}` + (parsed.source ? ' (custom source)' : '');
+          const params = new URLSearchParams({ sim: parsed.sim, addon: parsed.addon });
+          if (parsed.source) params.set('source', parsed.source);
+          result.value = `${pageUrl}?${params.toString()}`;
+          message.textContent = `${parsed.addon} for ${parsed.sim}${parsed.source ? ' · includes source' : ''}`;
         } else {
           result.value = '';
-          message.textContent = invalid ? 'Use the format skybound://addon/simulator/addon-name (a source, if any, must be https).' : '';
+          message.textContent = invalid ? 'Use the format skybound://addon/simulator/addon-name' : '';
         }
       }
 
@@ -568,10 +497,10 @@
         resetTimer = setTimeout(() => { copyLabel.textContent = 'Copy web link'; }, 1600);
       }
 
-      source.addEventListener('input', update);
+      sourceInput.addEventListener('input', update);
       result.addEventListener('focus', () => result.select());
       copyButton.addEventListener('click', copy);
-      source.focus();
+      sourceInput.focus();
     }
 
     card.addEventListener('pointermove', (event) => {
@@ -583,9 +512,8 @@
 
     card.addEventListener('pointerleave', () => card.style.setProperty('--ha', '0'));
 
-    const source = cleanSource(sourceParam);
-    if (sim && addon && source !== null) showRedirect(source);
-    else if (query.has('sim') || query.has('addon') || query.has('source')) showInvalid();
+    if (sim && addon) showRedirect();
+    else if (query.has('sim') || query.has('addon')) showInvalid();
     else showConverter();
   </script>
 </body>
